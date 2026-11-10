@@ -1,0 +1,224 @@
+---
+title: "OMOP Data Exploration"
+subtitle: "Initial Dataset Inspection"
+author: "Hafiz Muhammad Abubakar"
+format:
+  html:
+    theme: cosmo
+    toc: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## 1. Introduction
+
+This report explores the downloaded dataset to understand its structure, variables, completeness and basic characteristics.
+
+## 2. Load the Dataset
+
+```{r}
+library(readr)
+library(here)
+library(knitr)
+
+data <- read_csv(
+  here("..", "downloads", "data2.csv"),
+  show_col_types = FALSE
+)
+
+head(data)
+```
+
+## 3. Dataset Overview
+
+```{r}
+overview <- data.frame(
+  Metric = c(
+    "Total Observations",
+    "Total Variables",
+    "Missing Values",
+    "Duplicate Rows"
+  ),
+  Value = c(
+    nrow(data),
+    ncol(data),
+    sum(is.na(data)),
+    sum(duplicated(data))
+  )
+)
+
+kable(overview, caption = "Dataset Summary")
+```
+
+## 4. Data Preview
+
+```{r}
+kable(head(data, 10), caption = "First 10 Records")
+```
+
+## 5. Variable Information
+
+```{r}
+variables <- data.frame(
+  Variable = names(data),
+  Data_Type = sapply(data, function(x) class(x)[1]),
+  Missing = colSums(is.na(data)),
+  Missing_Percentage = round(
+    colMeans(is.na(data)) * 100, 2
+  )
+)
+
+kable(variables, caption = "Variable Overview")
+```
+
+## 6. Numerical Summary
+
+```{r}
+numeric_data <- data[sapply(data, is.numeric)]
+
+if (ncol(numeric_data) > 0) {
+  kable(
+    as.data.frame(summary(numeric_data)),
+    caption = "Descriptive Statistics"
+  )
+} else {
+  cat("No numerical variables available.")
+}
+```
+
+## 7. Initial Findings
+
+The dataset has been loaded and inspected. The summary tables provide an initial understanding of its dimensions, variable types, missing observations and numerical characteristics.
+
+Further data cleaning and quality assessment can be conducted based on these findings.
+
+## New Plot
+
+```{r}
+library(ggplot2)
+ggplot(data, aes(x = year, y = prevalence, colour = condition)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~database) +
+  labs(y = "Prevalence (%)")
+```
+
+## Box plot
+```{r}
+library(ggplot2)
+
+ggplot(data, aes(
+  x = year,
+  y = prevalence,
+  colour = database,
+  group = database
+)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2.8) +
+  facet_wrap(~condition, scales = "free_y") +
+  scale_x_continuous(breaks = sort(unique(data$year))) +
+  scale_colour_brewer(palette = "Dark2") +
+  labs(
+    title = "Temporal Trends in Disease Prevalence",
+    subtitle = "Comparison of prevalence across databases, 2019–2023",
+    x = "Year",
+    y = "Prevalence (%)",
+    colour = "Database"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 17),
+    plot.subtitle = element_text(colour = "grey40"),
+    strip.text = element_text(face = "bold", size = 11),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+```
+
+## Disease prevalence heatmap
+```{r}
+latest_data <- subset(
+  data,
+  year == max(data$year)
+)
+
+ggplot(latest_data, aes(
+  x = prevalence,
+  y = reorder(condition, prevalence),
+  colour = database
+)) +
+  geom_point(
+    position = position_dodge(width = 0.6),
+    size = 4
+  ) +
+  labs(
+    title = "Latest Disease Prevalence by Database",
+    subtitle = "Comparison using the most recent available year",
+    x = "Prevalence (%)",
+    y = "Condition",
+    colour = "Database"
+  ) +
+  scale_colour_brewer(palette = "Dark2") +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 17),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+```
+
+## year wise Prevalance
+```{r}
+change_data <- aggregate(
+  prevalence ~ database + condition + year,
+  data = data,
+  FUN = mean
+)
+
+start_data <- subset(change_data, year == min(year))
+end_data <- subset(change_data, year == max(year))
+
+change_data <- merge(
+  start_data[, c("database", "condition", "prevalence")],
+  end_data[, c("database", "condition", "prevalence")],
+  by = c("database", "condition"),
+  suffixes = c("_start", "_end")
+)
+
+change_data$change <- change_data$prevalence_end -
+                      change_data$prevalence_start
+
+ggplot(change_data, aes(
+  x = change,
+  y = condition,
+  fill = database
+)) +
+  geom_col(
+    position = position_dodge(width = 0.75),
+    width = 0.65
+  ) +
+  geom_vline(
+    xintercept = 0,
+    linetype = "dashed",
+    colour = "grey40"
+  ) +
+  scale_fill_brewer(palette = "Dark2") +
+  labs(
+    title = "Change in Disease Prevalence (2019–2023)",
+    subtitle = "Absolute change in prevalence, expressed in percentage points",
+    x = "Change in prevalence (percentage points)",
+    y = "Condition",
+    fill = "Database"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 17),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+```
+
+
+

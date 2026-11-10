@@ -1,0 +1,142 @@
+---
+title: "OMOP CDM Vocabulary Exploration"
+subtitle: "Training Exercise: GiBleed Dataset"
+author: "Hafiz Muhammad Abubakar"
+date: today
+date-format: "D MMMM YYYY"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    theme: cosmo
+    code-fold: false
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Introduction
+
+This report explores the vocabulary information available in a connected Observational Medical Outcomes Partnership (OMOP) Common Data Model (CDM). The analysis uses the **GiBleed** mock dataset, accessed through `omock` and stored in a local DuckDB database.
+
+The exercise addresses three questions:
+
+1. What vocabulary version is used by the CDM?
+2. How many concepts are recorded in the `concept` table, and how many are standard concepts?
+3. Which domains are available, and which domains are relevant when defining a cohort of people with asthma?
+
+## Setup and CDM connection
+
+The required R packages are loaded and the GiBleed dataset is connected as a CDM reference. Code is executed when the document is rendered but is not displayed in the report.
+
+```{r}
+library(omock)
+library(duckdb)
+library(CDMConnector)
+library(dplyr)
+library(CodelistGenerator)
+library(DBI)
+
+cdm <- mockCdmFromDataset(
+  datasetName = "GiBleed",
+  source = "duckdb"
+)
+```
+
+## 1. Vocabulary version
+
+The vocabulary version identifies the release of the OMOP Standardized Vocabularies represented in the CDM.
+
+```{r}
+vocabulary_version <- vocabularyVersion(cdm = cdm)
+```
+
+**Vocabulary version:** `r vocabulary_version`
+
+## 2. Concept table
+
+The `concept` table contains the clinical and other standardized concepts used to represent information in the CDM. In this report, a standard concept is identified by `standard_concept == "S"`.
+
+```{r}
+concept_summary <- cdm$concept |>
+  summarise(
+    total_concepts = n(),
+    standard_concepts = sum(standard_concept == "S", na.rm = TRUE)
+  ) |>
+  collect()
+
+concept_summary
+```
+
+The CDM contains **`r format(concept_summary$total_concepts, big.mark = ",")` concepts**, of which **`r format(concept_summary$standard_concepts, big.mark = ",")` are standard concepts**.
+
+### Concept classification
+
+The following table summarises the concept records by the value of `standard_concept`.
+
+```{r}
+concept_type_summary <- cdm$concept |>
+  count(standard_concept, name = "number_of_concepts") |>
+  collect() |>
+  mutate(
+    concept_type = case_when(
+      standard_concept == "S" ~ "Standard concept",
+      standard_concept == "C" ~ "Classification concept",
+      is.na(standard_concept) ~ "Non-standard / not classified",
+      TRUE ~ "Other"
+    )
+  ) |>
+  select(concept_type, number_of_concepts)
+
+knitr::kable(
+  concept_type_summary,
+  col.names = c("Concept type", "Number of concepts"),
+  caption = "Concept records by standard_concept classification"
+)
+```
+
+## 3. Available domains
+
+The OMOP vocabulary assigns concepts to domains, which indicate the type of clinical or healthcare information represented. The available domains in this CDM are retrieved using `availableDomains()`.
+
+```{r}
+available_domains <- availableDomains(cdm = cdm)
+available_domains
+```
+
+### Concept counts by domain
+
+The table below shows the number of concepts associated with each domain in the `concept` table.
+
+```{r}
+domain_counts <- cdm$concept |>
+  count(domain_id, name = "number_of_concepts", sort = TRUE) |>
+  collect()
+
+knitr::kable(
+  domain_counts,
+  col.names = c("Domain", "Number of concepts"),
+  caption = "Concept counts by domain"
+)
+```
+
+## 4. Domains relevant to an asthma cohort
+
+The **Condition** domain is the primary domain for defining an asthma cohort because asthma is a clinical diagnosis. In the OMOP CDM, diagnoses are generally recorded in the `condition_occurrence` table and linked to standard concepts in the `Condition` domain.
+
+Other domains may be useful as supporting evidence, depending on the cohort definition:
+
+- **Drug:** asthma-related medication use, such as inhaled corticosteroids or bronchodilators. Medication exposure alone should not be treated as proof of an asthma diagnosis.
+- **Measurement:** lung-function measurements, such as forced expiratory volume (FEV1), where available.
+- **Observation:** relevant recorded clinical history or patient-reported information, where available.
+
+For a diagnosis-based asthma cohort, the **Condition** domain should therefore be the starting point. Additional domains can be incorporated to refine the cohort or define supporting criteria.
+
+## Conclusion
+
+This exercise demonstrates how to inspect the vocabulary version, quantify concepts and standard concepts, and identify the domains represented in an OMOP CDM. For an asthma cohort, the Condition domain is the primary domain for identifying diagnosed individuals, while Drug, Measurement and Observation data can provide supporting clinical context.
+
+The results in this report are generated directly from the connected GiBleed CDM at render time.

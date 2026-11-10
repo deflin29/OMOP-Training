@@ -1,0 +1,27 @@
+{
+    "id": "92DE697C",
+    "path": "D:/PHI-LAB/OMPO-Training/OMOP-Training-Prj/day-2-modifyCohortswithFunctions.R",
+    "project_path": "day-2-modifyCohortswithFunctions.R",
+    "type": "r_source",
+    "hash": "2455379967",
+    "contents": "",
+    "dirty": false,
+    "created": 1794324911171.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "205,25",
+        "scrollLine": "184"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1794326958,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1794326958990,
+    "read_only": false,
+    "read_only_alternatives": []
+}
