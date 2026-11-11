@@ -71,3 +71,6 @@ my_cohort_prior |> glimpse()
 my_cohort_prior |>
   count(prior_heparin) |>
   collect()
+
+
+
