@@ -104,6 +104,48 @@ glimpse(result)
 result <- cdm$my_cohort |>
   summariseCohortOverlap()
 
+
+
+
+
+
+
+result <- cdm$my_cohort |>
+  summariseCohortTiming(restrictToFirstEntry = TRUE)
+
+glimpse(result)
 glimpse(result)
 plotCohortOverlap(result = result, uniqueCombinations = TRUE)
 
+tableCohortTiming(result = result,
+                  timeScale = "years", 
+                  uniqueCombinations = FALSE)
+
+plotCohortTiming(
+  result = result,
+  plotType = "densityplot",
+  timeScale = "years",
+  uniqueCombinations = FALSE
+)
+
+
+
+result <- cdm$my_cohort |>
+  summariseLargeScaleCharacteristics(
+    cohortId = "clopidogrel",
+    window = list(c(-Inf, -1)),
+    episodeInWindow = "drug_exposure",
+    minimumFrequency = 0.05
+  )
+tableTopLargeScaleCharacteristics(result = result, topConcepts = 5)
+
+
+
+result <- cdm$my_cohort |>
+  summariseLargeScaleCharacteristics(
+    cohortId = "osteoarthritis",
+    window = list(c(-Inf, -1)),
+    episodeInWindow = "drug_exposure",
+    minimumFrequency = 0.05
+  )
+tableTopLargeScaleCharacteristics(result = result, topConcepts = 5)
