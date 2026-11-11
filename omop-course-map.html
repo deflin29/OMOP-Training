@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OMOP Course Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column; three hand-drawn figures carry the explanation, reference tables follow. */
+:root {
+  --bg: #F3F6F5;
+  --surface: #FFFFFF;
+  --ink: #14201D;
+  --muted: #53615C;
+  --line: #C6D0CC;
+  --code-bg: #E9EFEC;
+  --data: #5F6B74;
+  --d1: #3D58A3;
+  --d2: #9E5F08;
+  --d3: #0B776E;
+  --on-d3: #FFFFFF;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1513; --surface: #17201E; --ink: #E3EBE8; --muted: #9DABA6; --line: #33423E; --code-bg: #1F2A28;
+    --data: #A0ACB4; --d1: #91A9EC; --d2: #E3A24A; --d3: #4CC3B6; --on-d3: #07211E;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1513; --surface: #17201E; --ink: #E3EBE8; --muted: #9DABA6; --line: #33423E; --code-bg: #1F2A28;
+  --data: #A0ACB4; --d1: #91A9EC; --d2: #E3A24A; --d3: #4CC3B6; --on-d3: #07211E;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 60px;
+}
+.wrap > * { min-width: 0; }
+h1, h2 { font-weight: 600; line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(28px, 4.2vw, 42px); letter-spacing: -0.01em; }
+h2 { font-size: 23px; }
+p { margin: 0; max-width: 70ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.9em; }
+a { color: var(--d1); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--d1); outline-offset: 2px; border-radius: 2px; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.intro { display: grid; gap: 16px; }
+.lede { font-size: 17.5px; color: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 4px; font-size: 14px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; background: var(--surface); }
+.sw.data { border-color: var(--data); }
+.sw.d1 { border-color: var(--d1); }
+.sw.d2 { border-color: var(--d2); }
+.sw.d3 { border-color: var(--d3); }
+
+section { display: grid; gap: 18px; }
+.sec-head { display: grid; gap: 8px; }
+.sec-head p { color: var(--muted); }
+
+.fig { margin: 0; display: grid; gap: 14px; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.fig svg { display: block; width: 100%; height: auto; }
+.dia-pipe { min-width: 880px; }
+.dia-net { min-width: 760px; }
+.dia-time { min-width: 780px; }
+figcaption { font-size: 14.5px; color: var(--muted); max-width: 78ch; }
+
+/* SVG styling: all colors from tokens so both themes work */
+.dia { color: var(--muted); }
+.dia text { font-family: var(--font-sans); fill: var(--ink); }
+.dia .tag { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; }
+.dia .ttl { font-size: 19px; font-weight: 600; }
+.dia .ttl.sm { font-size: 16px; }
+.dia .pkg { font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+.dia .bdy { font-size: 13.5px; fill: var(--muted); }
+.dia .code { font-family: var(--font-mono); font-size: 12px; fill: var(--ink); }
+.dia .arr { font-size: 11.5px; fill: var(--muted); }
+.dia .note { font-size: 12px; fill: var(--muted); }
+.dia .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.dia .panel { fill: var(--code-bg); }
+.dia .flow { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.dia .s-data .box { stroke: var(--data); }
+.dia .s-data .tag, .dia .s-data .pkg { fill: var(--data); }
+.dia .s-d1 .box { stroke: var(--d1); }
+.dia .s-d1 .tag, .dia .s-d1 .pkg { fill: var(--d1); }
+.dia .s-d2 .box { stroke: var(--d2); }
+.dia .s-d2 .tag, .dia .s-d2 .pkg { fill: var(--d2); }
+.dia .s-d3 .box { stroke: var(--d3); stroke-width: 3; }
+.dia .s-d3 .tag, .dia .s-d3 .pkg { fill: var(--d3); }
+.dia .partner .box { stroke-dasharray: 6 4; }
+.dia .pill { fill: var(--d3); }
+.dia .pill-t { fill: var(--on-d3); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; }
+.dia .band { fill: color-mix(in srgb, var(--d1) 10%, transparent); stroke: var(--d1); stroke-width: 1.2; }
+.dia .band-t { font-size: 13px; fill: var(--ink); }
+.dia .band-k { fill: var(--d1); font-weight: 600; letter-spacing: 0.06em; }
+
+/* timeline figure */
+.dia .rowl { font-size: 12.5px; fill: var(--muted); }
+.dia .obsbar { fill: var(--code-bg); stroke: var(--line); stroke-width: 1; }
+.dia .cohortbar { fill: var(--d3); }
+.dia .onbar { font-size: 11.5px; font-weight: 600; fill: var(--on-d3); }
+.dia .idx { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.dia .brk { fill: none; stroke: var(--muted); stroke-width: 1.3; }
+.dia .brkl { font-family: var(--font-mono); font-size: 12px; fill: var(--ink); }
+.dia .win { fill: color-mix(in srgb, var(--d3) 14%, transparent); stroke: var(--d3); stroke-width: 1.3; stroke-dasharray: 5 3; }
+.dia .winl { font-family: var(--font-mono); font-size: 12px; fill: var(--d3); font-weight: 500; }
+.dia .ev { fill: var(--ink); }
+.dia .res { font-family: var(--font-mono); font-size: 13px; font-weight: 600; fill: var(--d3); }
+.dia .idxl { font-size: 12.5px; fill: var(--ink); }
+
+pre {
+  margin: 0;
+  background: var(--code-bg);
+  border-radius: 8px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+pre .cm { color: var(--muted); }
+pre .hl { color: var(--d3); font-weight: 500; }
+
+.gloss {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: 22px 36px;
+  margin: 0;
+}
+.gloss div { min-width: 0; border-top: 1px solid var(--line); padding-top: 12px; }
+.gloss dt { font-weight: 600; }
+.gloss dt small { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 6px; }
+.gloss dd { margin: 4px 0 0; color: var(--muted); font-size: 14.5px; }
+.gloss dd code { color: var(--ink); }
+
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 560px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px 10px 0; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td code { white-space: nowrap; }
+td.k { white-space: nowrap; font-weight: 600; }
+.today { color: var(--d3); font-weight: 600; }
+
+.sources { font-size: 13.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+</style>
+
+<style>body{margin:0}</style>
+</head>
+<body>
+<main class="wrap">
+
+  <header class="intro">
+    <p class="eyebrow">Oxford HDS OMOP course · Days 1–3</p>
+    <h1>From raw health records to results you can share</h1>
+    <p class="lede">The course teaches one workflow for observational health research, and every R package you meet does one step of it. Day 2 defines the study population, Day 3 describes it, and the Day 1 tools hold the study together and share what it finds.</p>
+    <div class="legend" aria-label="Colour key">
+      <span><i class="sw data"></i>Data you are given</span>
+      <span><i class="sw d1"></i>Day 1 · Tools for conducting studies</span>
+      <span><i class="sw d2"></i>Day 2 · OMOP phenotyping</span>
+      <span><i class="sw d3"></i>Day 3 · Characterising a population</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <h2>The pipeline</h2>
+      <p>Six steps, left to right and then down. Each box names the R packages for that step and shows what the data looks like when the step is done.</p>
+    </div>
+    <figure class="fig">
+      <div class="scroll">
+        <svg class="dia dia-pipe" viewBox="0 0 1200 744" role="img" aria-label="Flowchart of the six-step OMOP study pipeline: source health records are mapped by ETL into an OMOP CDM database; the vocabulary is searched to build codelists; codelists find the people who form cohorts; PatientProfiles and CohortCharacteristics add and summarise patient characteristics; aggregate results are shared with Quarto and OmopViewer. Steps 2 to 6 live in one R project on GitHub.">
+          <defs>
+            <marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+
+          <!-- Step 1 -->
+          <g class="s-data">
+            <rect class="box" x="20" y="30" width="340" height="250" rx="10"/>
+            <text class="tag" x="40" y="60">STEP 1 · THE RAW DATA</text>
+            <text class="ttl" x="40" y="88">Source health records</text>
+            <text class="pkg" x="40" y="112">held by each data partner</text>
+            <text class="bdy" x="40" y="142">CPRD GP records, hospital EHRs, claims.</text>
+            <text class="bdy" x="40" y="162">Each uses its own codes and layout.</text>
+            <rect class="panel" x="36" y="184" width="308" height="80" rx="6"/>
+            <text class="code" y="208"><tspan x="50">Read</tspan><tspan x="118">G30..</tspan><tspan x="214">Acute MI</tspan></text>
+            <text class="code" y="230"><tspan x="50">ICD-10</tspan><tspan x="118">I21</tspan><tspan x="214">Acute MI</tspan></text>
+            <text class="code" y="252"><tspan x="50">SNOMED</tspan><tspan x="118">57054005</tspan><tspan x="214">Acute MI</tspan></text>
+          </g>
+
+          <!-- 1 -> 2 -->
+          <text class="arr" x="395" y="130" text-anchor="middle">ETL</text>
+          <text class="arr" x="395" y="145" text-anchor="middle">maps codes</text>
+          <path class="flow" d="M364,155 H425" marker-end="url(#ah1)"/>
+
+          <!-- Step 2 -->
+          <g class="s-data">
+            <rect class="box" x="430" y="30" width="340" height="250" rx="10"/>
+            <text class="tag" x="450" y="60">STEP 2 · COMMON DATA MODEL</text>
+            <text class="ttl" x="450" y="88">OMOP CDM database</text>
+            <text class="pkg" x="450" y="112">omock · CDMConnector · duckdb</text>
+            <text class="bdy" x="450" y="142">Same tables and concept IDs in every</text>
+            <text class="bdy" x="450" y="162">database, so one script runs anywhere.</text>
+            <rect class="panel" x="446" y="184" width="308" height="80" rx="6"/>
+            <text class="code" x="460" y="208">cdm$person · cdm$observation_period</text>
+            <text class="code" x="460" y="230">cdm$condition_occurrence</text>
+            <text class="code" x="460" y="252">all three codes → concept 312327</text>
+          </g>
+
+          <!-- 2 -> 3 -->
+          <text class="arr" x="805" y="130" text-anchor="middle">search</text>
+          <text class="arr" x="805" y="145" text-anchor="middle">vocabulary</text>
+          <path class="flow" d="M774,155 H835" marker-end="url(#ah1)"/>
+
+          <!-- Step 3 -->
+          <g class="s-d2">
+            <rect class="box" x="840" y="30" width="340" height="250" rx="10"/>
+            <text class="tag" x="860" y="60">STEP 3 · DAY 2 · PHENOTYPING</text>
+            <text class="ttl" x="860" y="88">Codelists</text>
+            <text class="pkg" x="860" y="112">CodelistGenerator</text>
+            <text class="bdy" x="860" y="142">Which concept IDs mean “arthritis”?</text>
+            <text class="bdy" x="860" y="162">Search, follow hierarchy, check counts.</text>
+            <rect class="panel" x="856" y="184" width="308" height="80" rx="6"/>
+            <text class="code" x="870" y="208">list(arthritis = c(80180, 80809))</text>
+            <text class="code" y="230"><tspan x="870">80180</tspan><tspan x="930">Osteoarthritis</tspan></text>
+            <text class="code" y="252"><tspan x="870">80809</tspan><tspan x="930">Rheumatoid arthritis</tspan></text>
+          </g>
+
+          <!-- 3 -> 4 (wraps to the next row) -->
+          <text class="arr" x="600" y="330" text-anchor="middle">find the people with these codes → cohort entry and exit dates</text>
+          <path class="flow" d="M1010,280 V340 H190 V395" marker-end="url(#ah1)"/>
+
+          <!-- Step 4 -->
+          <g class="s-d2">
+            <rect class="box" x="20" y="400" width="340" height="250" rx="10"/>
+            <text class="tag" x="40" y="430">STEP 4 · DAY 2 · PHENOTYPING</text>
+            <text class="ttl" x="40" y="458">Cohorts</text>
+            <text class="pkg" x="40" y="482">CohortConstructor · PhenotypeR</text>
+            <text class="bdy" x="40" y="512">Who is in, from when, until when.</text>
+            <text class="bdy" x="40" y="532">Then require age, sex, prior history…</text>
+            <rect class="panel" x="36" y="554" width="308" height="80" rx="6"/>
+            <text class="code" x="50" y="578">conceptCohort(cdm, conceptSet)</text>
+            <text class="code" y="600"><tspan x="50">cohort_definition_id</tspan><tspan x="216">subject_id</tspan></text>
+            <text class="code" y="622"><tspan x="50">cohort_start_date</tspan><tspan x="192">cohort_end_date</tspan></text>
+          </g>
+
+          <!-- 4 -> 5 -->
+          <text class="arr" x="395" y="500" text-anchor="middle">add</text>
+          <text class="arr" x="395" y="515" text-anchor="middle">features</text>
+          <path class="flow" d="M364,525 H425" marker-end="url(#ah1)"/>
+
+          <!-- Step 5 (today) -->
+          <g class="s-d3">
+            <rect class="box" x="430" y="400" width="340" height="250" rx="10"/>
+            <rect class="pill" x="640" y="388" width="118" height="24" rx="12"/>
+            <text class="pill-t" x="699" y="404" text-anchor="middle">YOU ARE HERE</text>
+            <text class="tag" x="450" y="436">STEP 5 · DAY 3 · CHARACTERISATION</text>
+            <text class="ttl" x="450" y="462">Patient characteristics</text>
+            <text class="pkg" x="450" y="486">PatientProfiles · CohortCharacteristics</text>
+            <text class="bdy" x="450" y="514">Add features at the index date, then</text>
+            <text class="bdy" x="450" y="534">summarise the cohort: counts, %, medians.</text>
+            <rect class="panel" x="446" y="554" width="308" height="80" rx="6"/>
+            <text class="code" x="460" y="578">addDemographics() → age, sex</text>
+            <text class="code" x="460" y="600">addCohortIntersectFlag() → 0/1</text>
+            <text class="code" x="460" y="622">summariseCharacteristics()</text>
+          </g>
+
+          <!-- 5 -> 6 -->
+          <text class="arr" x="805" y="500" text-anchor="middle">aggregate</text>
+          <text class="arr" x="805" y="515" text-anchor="middle">&amp; export</text>
+          <path class="flow" d="M774,525 H835" marker-end="url(#ah1)"/>
+
+          <!-- Step 6 -->
+          <g class="s-d1">
+            <rect class="box" x="840" y="400" width="340" height="250" rx="10"/>
+            <text class="tag" x="860" y="430">STEP 6 · DAY 1 · TOOLS</text>
+            <text class="ttl" x="860" y="458">Results you can share</text>
+            <text class="pkg" x="860" y="482">Quarto · OmopViewer · GitHub</text>
+            <text class="bdy" x="860" y="512">Aggregate numbers only. Patient rows</text>
+            <text class="bdy" x="860" y="532">never leave the database.</text>
+            <rect class="panel" x="856" y="554" width="308" height="80" rx="6"/>
+            <text class="code" x="870" y="578">tableCharacteristics()</text>
+            <text class="code" x="870" y="600">plotCharacteristics()</text>
+            <text class="code" x="870" y="622">report.qmd · Shiny app</text>
+          </g>
+
+          <!-- Day 1 frame -->
+          <rect class="band" x="20" y="680" width="1160" height="44" rx="8"/>
+          <text class="band-t" x="600" y="707" text-anchor="middle"><tspan class="band-k">DAY 1 · </tspan>Your study (steps 2–6) is one R project: written in R, versioned on GitHub, set up with OmopStudyBuilder and renv.</text>
+        </svg>
+      </div>
+      <figcaption>Steps 1 and 2 happen before you arrive: a data partner converts its records into the OMOP CDM. In class you skip them by loading synthetic OMOP data with omock (GiBleed on Day 2, synpuf-1k on Day 3). Steps 3 and 4 together are <strong>phenotyping</strong>: turning a clinical idea like “arthritis” into a rule that finds the right people in the data.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Why everyone converts to OMOP</h2>
+      <p>A study is written once and sent to every data partner. Each partner runs the same code on its own OMOP copy and returns only aggregate results. This works because every database has the same tables and the same concept IDs, which is what steps 1 and 2 buy you.</p>
+    </div>
+    <figure class="fig">
+      <div class="scroll">
+        <svg class="dia dia-net" viewBox="0 0 1120 350" role="img" aria-label="Network study: the study team sends the same R code to three example data partners, CPRD GOLD in the UK, SIDIAP in Spain and IPCI in the Netherlands. Each runs it on its own OMOP CDM, and only aggregate results return to be combined and viewed.">
+          <defs>
+            <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+
+          <g class="s-d1">
+            <rect class="box" x="20" y="120" width="230" height="100" rx="10"/>
+            <text class="ttl sm" x="40" y="154">Study team</text>
+            <text class="bdy" x="40" y="180">one R project on GitHub</text>
+            <text class="pkg" x="40" y="202">OmopStudyBuilder · renv</text>
+          </g>
+
+          <text class="arr" x="375" y="160" text-anchor="middle">same R code</text>
+          <path class="flow" d="M250,170 H320"/>
+          <path class="flow" d="M320,59 V281"/>
+          <path class="flow" d="M320,59 H425" marker-end="url(#ah2)"/>
+          <path class="flow" d="M320,170 H425" marker-end="url(#ah2)"/>
+          <path class="flow" d="M320,281 H425" marker-end="url(#ah2)"/>
+
+          <g class="s-data partner">
+            <rect class="box" x="430" y="20" width="300" height="78" rx="10"/>
+            <text class="ttl sm" x="450" y="52">CPRD GOLD · UK</text>
+            <text class="bdy" x="450" y="76">GP records → OMOP CDM · code runs here</text>
+          </g>
+          <g class="s-data partner">
+            <rect class="box" x="430" y="131" width="300" height="78" rx="10"/>
+            <text class="ttl sm" x="450" y="163">SIDIAP · Spain</text>
+            <text class="bdy" x="450" y="187">GP records → OMOP CDM · code runs here</text>
+          </g>
+          <g class="s-data partner">
+            <rect class="box" x="430" y="242" width="300" height="78" rx="10"/>
+            <text class="ttl sm" x="450" y="274">IPCI · Netherlands</text>
+            <text class="bdy" x="450" y="298">GP records → OMOP CDM · code runs here</text>
+          </g>
+
+          <text class="arr" x="770" y="160" text-anchor="middle">aggregates</text>
+          <path class="flow" d="M730,59 H810"/>
+          <path class="flow" d="M730,170 H810"/>
+          <path class="flow" d="M730,281 H810"/>
+          <path class="flow" d="M810,59 V281"/>
+          <path class="flow" d="M810,170 H865" marker-end="url(#ah2)"/>
+
+          <g class="s-d1">
+            <rect class="box" x="870" y="120" width="230" height="100" rx="10"/>
+            <text class="ttl sm" x="890" y="154">Combined results</text>
+            <text class="pkg" x="890" y="180">summarised_result</text>
+            <text class="bdy" x="890" y="202">OmopViewer · Quarto</text>
+          </g>
+
+          <text class="note" x="580" y="342" text-anchor="middle">Dashed boxes: patient-level data stays inside each partner</text>
+        </svg>
+      </div>
+      <figcaption>The three partners are real OMOP-mapped GP databases, shown as examples. The course itself uses synthetic data, so you play every role on one laptop.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Day 3: what PatientProfiles measures</h2>
+      <p>Every PatientProfiles function looks at one person around one date, the index date, and writes the answer into a new column. This is one person from <code>my_cohort</code>.</p>
+    </div>
+    <figure class="fig">
+      <div class="scroll">
+        <svg class="dia dia-time" viewBox="0 0 1140 300" role="img" aria-label="Timeline of one person: an observation period with the index date in the middle. Prior and future observation are the days before and after it. A window from 365 days to 1 day before the index date contains one heparin cohort entry and three condition records, giving prior_heparin = 1 and prior_conditions = 3.">
+          <text class="rowl" x="20" y="129">observation period</text>
+          <text class="rowl" x="20" y="189">heparin cohort entry</text>
+          <text class="rowl" x="20" y="219">condition record</text>
+
+          <path class="brk" d="M200,80 V72 H626 V80"/>
+          <text class="brkl" x="413" y="62" text-anchor="middle">prior_observation (days)</text>
+          <path class="brk" d="M634,80 V72 H1060 V80"/>
+          <text class="brkl" x="847" y="62" text-anchor="middle">future_observation (days)</text>
+
+          <rect class="obsbar" x="200" y="112" width="860" height="24" rx="12"/>
+          <rect class="cohortbar" x="630" y="112" width="140" height="24"/>
+          <text class="onbar" x="700" y="128" text-anchor="middle">in my_cohort</text>
+
+          <rect class="win" x="544" y="152" width="84" height="76" rx="4"/>
+          <text class="winl" x="622" y="248" text-anchor="end">window = c(-365, -1)</text>
+
+          <polygon class="ev" points="330,177 337,184 330,191 323,184"/>
+          <polygon class="ev" points="575,177 582,184 575,191 568,184"/>
+
+          <circle class="ev" cx="290" cy="214" r="5"/>
+          <circle class="ev" cx="420" cy="214" r="5"/>
+          <circle class="ev" cx="556" cy="214" r="5"/>
+          <circle class="ev" cx="590" cy="214" r="5"/>
+          <circle class="ev" cx="612" cy="214" r="5"/>
+          <circle class="ev" cx="720" cy="214" r="5"/>
+
+          <line class="idx" x1="630" y1="44" x2="630" y2="258"/>
+          <text class="idxl" x="630" y="282" text-anchor="middle">index date = cohort_start_date · age and sex are measured on this day</text>
+
+          <text class="res" x="1120" y="189" text-anchor="end">prior_heparin = 1</text>
+          <text class="res" x="1120" y="219" text-anchor="end">prior_conditions = 3</text>
+        </svg>
+      </div>
+      <figcaption>The shaded window looks back from 365 days to 1 day before the index date. One heparin cohort entry falls inside it, so the flag is 1. Three of the six condition records fall inside, so the count is 3. Records outside the window are ignored. Prior and future observation tell you how much history and follow-up the person has, which matters because no record outside the observation period means “unknown”, not “no event”.</figcaption>
+    </figure>
+    <pre><span class="cm"># the R that produces those columns (your Day 3 script)</span>
+cdm$my_cohort |>
+  addDemographics() |>                                   <span class="cm"># age, sex, prior/future observation</span>
+  addCohortIntersectFlag(targetCohortTable = "medications",
+                         window = c(-365, -1),
+                         nameStyle = <span class="hl">"prior_{cohort_name}"</span>) |>  <span class="cm"># prior_heparin</span>
+  addTableIntersectCount(tableName = "condition_occurrence",
+                         window = c(-365, -1),
+                         nameStyle = <span class="hl">"prior_conditions"</span>)       <span class="cm"># prior_conditions</span></pre>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Glossary</h2>
+      <p>The terms the slides assume you know, in plain words.</p>
+    </div>
+    <dl class="gloss">
+      <div><dt>CPRD <small>Clinical Practice Research Datalink</small></dt><dd>Anonymised UK GP records for millions of patients. CPRD GOLD uses Read codes and CPRD Aurum uses SNOMED-based codes. Researchers often use it converted to OMOP. The course uses synthetic data instead.</dd></div>
+      <div><dt>OMOP <small>Observational Medical Outcomes Partnership</small></dt><dd>The project that created the data model and vocabularies. The OHDSI open-science community maintains them today.</dd></div>
+      <div><dt>CDM <small>Common Data Model</small></dt><dd>The fixed set of tables and columns every OMOP database has: <code>person</code>, <code>observation_period</code>, <code>condition_occurrence</code>, <code>drug_exposure</code>, <code>measurement</code>, <code>death</code>, plus the vocabulary tables.</dd></div>
+      <div><dt>ETL <small>extract, transform, load</small></dt><dd>The one-off job that converts a source database into the CDM and maps its local codes to standard concepts. Data partners do this. You don’t, in this course.</dd></div>
+      <div><dt>Concept ID</dt><dd>The number OMOP gives each clinical idea: 80180 is osteoarthritis, 1367571 is heparin. Names and hierarchy live in <code>concept</code>, <code>concept_relationship</code> and <code>concept_ancestor</code>.</dd></div>
+      <div><dt>Standard vocabularies</dt><dd>SNOMED CT for conditions, RxNorm for drugs, LOINC for lab tests. Local codes such as Read or ICD-10 are mapped onto these during ETL.</dd></div>
+      <div><dt>Codelist</dt><dd>A named list of concept IDs that together identify one thing, such as <code>list(arthritis = c(80180, 80809))</code>.</dd></div>
+      <div><dt>Cohort</dt><dd>The people who meet a definition, with the date each one enters and leaves. Always four columns: <code>cohort_definition_id</code>, <code>subject_id</code>, <code>cohort_start_date</code>, <code>cohort_end_date</code>.</dd></div>
+      <div><dt>Phenotype, phenotyping</dt><dd>A phenotype is the rule set (codelists plus logic) that finds people with a condition in the data. Phenotyping is building that rule set and checking it finds the right people. That is Day 2, with PhenotypeR for the checks.</dd></div>
+      <div><dt>Observation period</dt><dd>The time a person is visible in the database, for example while registered with a GP. Outside it, a missing record tells you nothing.</dd></div>
+      <div><dt>Index date</dt><dd>The date characteristics are measured against. For a cohort it defaults to <code>cohort_start_date</code>.</dd></div>
+      <div><dt>Window</dt><dd>A time range in days relative to the index date. <code>c(-365, -1)</code> is the year before, excluding the index day. <code>c(0, Inf)</code> is from the index date onwards.</dd></div>
+      <div><dt>Attrition</dt><dd>How many people and records each step of a cohort definition removes. Cohort tables record it automatically.</dd></div>
+      <div><dt>cdm_reference</dt><dd>The <code>cdm</code> object in R. It holds one handle per table (<code>cdm$person</code>), and queries on them run inside the database.</dd></div>
+      <div><dt>summarised_result</dt><dd>The standard long table of aggregate results. <code>summarise*()</code> functions produce it; <code>table*()</code>, <code>plot*()</code> and OmopViewer read it.</dd></div>
+      <div><dt>Network study</dt><dd>One study run by several data partners on their own data, with only aggregate results shared.</dd></div>
+      <div><dt>Synthetic data</dt><dd>Generated patients for practice, loaded with omock. GiBleed is a small teaching dataset; synpuf-1k is about 1,000 synthetic US Medicare claims patients.</dd></div>
+    </dl>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>R, translated</h2>
+      <p>The R you see in the slides, mapped to things you already know.</p>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>In the course</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td><code>cdm</code></td><td>A database connection plus a dictionary of lazy table handles.</td></tr>
+          <tr><td><code>cdm$drug_exposure |> filter(...)</code></td><td>A lazy query. dplyr verbs are translated to SQL (dbplyr) and run inside duckdb.</td></tr>
+          <tr><td><code>collect()</code></td><td>Run the query and pull the rows into memory, like <code>.fetchall()</code> or <code>.toPandas()</code>.</td></tr>
+          <tr><td><code>x |> f(y)</code></td><td>The pipe. Same as <code>f(x, y)</code>, and reads like method chaining.</td></tr>
+          <tr><td><code>filter · select · mutate · group_by · summarise · left_join</code></td><td>WHERE · SELECT · computed column · GROUP BY · aggregate · LEFT JOIN.</td></tr>
+          <tr><td><code>c(0, 17)</code></td><td>A vector, R’s basic array.</td></tr>
+          <tr><td><code>list(arthritis = c(80180, 80809))</code></td><td>A named list, like the dict <code>{"arthritis": [80180, 80809]}</code>.</td></tr>
+          <tr><td><code>addDemographics()</code>, <code>add…Intersect…()</code></td><td>Feature engineering: date-windowed joins that add one column per feature.</td></tr>
+          <tr><td>duckdb</td><td>An in-process SQL database stored in one file, like SQLite but columnar.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Course map</h2>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Day</th><th>Sessions</th><th>Pipeline step</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Day 1 · Tools for conducting studies</td><td>R · GitHub · Quarto · OmopStudyBuilder · OmopViewer</td><td>Step 6, and the project around steps 2–6</td></tr>
+          <tr><td class="k">Day 2 · OMOP phenotyping using R</td><td>CodelistGenerator · CohortConstructor · PhenotypeR (extra slides)</td><td>Steps 2–4</td></tr>
+          <tr><td class="k">Day 3 · Characterising a study population</td><td><span class="today">PatientProfiles (today)</span> · CohortCharacteristics</td><td>Step 5</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sources">
+      <a href="https://oxford-pharmacoepi.github.io/HDS-OMOP-course/">Course slides</a>
+      <a href="https://darwin-eu.github.io/PatientProfiles/">PatientProfiles</a>
+      <a href="https://darwin-eu.github.io/CohortCharacteristics/">CohortCharacteristics</a>
+      <a href="https://ohdsi.github.io/CohortConstructor/">CohortConstructor</a>
+      <a href="https://ohdsi.github.io/CommonDataModel/">OMOP CDM documentation</a>
+    </p>
+  </section>
+
+</main>
+</body>
+</html>

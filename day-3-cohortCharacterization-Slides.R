@@ -101,5 +101,9 @@ result <- cdm$my_cohort |>
 
 glimpse(result)
 
+result <- cdm$my_cohort |>
+  summariseCohortOverlap()
 
+glimpse(result)
+plotCohortOverlap(result = result, uniqueCombinations = TRUE)
 
